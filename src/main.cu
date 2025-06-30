@@ -5,9 +5,8 @@
 
 int main() {
     int n;
-    int* adj = loadGraphFromFile("data/sample_graph3.txt", &n);
+    int* adj = loadGraphFromFile("data/sample_graph10.txt", &n);
     check_acyclic(adj, n);
-    printf("aaaaa");
     delete[] adj;
     return 0;
 }
