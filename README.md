@@ -1,8 +1,10 @@
 # CUDA Cycle Detection in Directed Graphs using Kahn's Algorithm
 
 This project implements a **CUDA-accelerated algorithm** to detect cycles in a directed graph using **Kahn's topological sort algorithm**. It supports two graph representations:
+
 - Adjacency matrix
 - Compressed Sparse Row (CSR) format
+
 By leveraging NVIDIA GPUs, the algorithm achieves high parallel performance for in-degree computation, topological sorting, and cycle detection.
 
 ## Project Structure
@@ -69,8 +71,6 @@ If not installed, follow NVIDIA's [official installation guide](https://docs.nvi
 ## Customizing the Makefile
 
 Depending on your hardware or preferences, you may need to modify the `Makefile`. Below are some common recommendations:
-
-1. **Set Target GPU Architecture**
 
 Make sure the `Makefile` targets your GPU’s compute capability.
 In both `src/Makefile` and `src_csr/Makefile`, you may see something like:
