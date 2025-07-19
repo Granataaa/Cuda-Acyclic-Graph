@@ -1,6 +1,6 @@
 CC = nvcc
 CFLAGS = -O2 -arch=sm_86
-SRC = src/main.cu src/graph_utils.cu src/scan.cu
+SRC = main.cu graph_utils.cu scan.cu
 OBJ = $(SRC:.cu=.o)
 TARGET = acyclic_graph
 

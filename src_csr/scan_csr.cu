@@ -1,12 +1,12 @@
-#include "scan.h"
-#include "graph_utils.h"
+#include "scan_csr.h"
+#include "graph_utils_csr.h"
 #include <cuda_runtime.h>
 #include <stdio.h>
 
 // Kernel CUDA: Scan (Prefix Sum) su singolo blocco Blelloch
 // Questo kernel è progettato per operare su un singolo blocco di dati.
 // La memoria condivisa `temp` deve essere allocata dinamicamente con `extern __shared__`.
-__global__ void scanKernel(const int *input, int *output, int n_elements) {
+__global__ void scanKernel_csr(const int *input, int *output, int n_elements) {
     extern __shared__ int temp[]; // Memoria condivisa per la scan
     int localID = threadIdx.x;
     int globalID = blockIdx.x * blockDim.x + threadIdx.x;
@@ -57,7 +57,7 @@ __global__ void scanKernel(const int *input, int *output, int n_elements) {
 
 // Kernel CUDA: Scan Multi-Block (Fase 1: Calcola somme parziali per ogni blocco)
 // Ogni blocco esegue una scan interna e il thread 0 del blocco salva la somma totale.
-__global__ void scanKernelMultiBlock(const int *input, int *output, int *blockSums, int n_padded) {
+__global__ void scanKernelMultiBlock_csr(const int *input, int *output, int *blockSums, int n_padded) {
     extern __shared__ int temp[]; 
     int tid = threadIdx.x;
     int offset = 1;
@@ -105,7 +105,7 @@ __global__ void scanKernelMultiBlock(const int *input, int *output, int *blockSu
 
 // Kernel CUDA: Aggiunge le somme scansionate dei blocchi all'output
 // Questo kernel è la seconda fase della scan multi-blocco.
-__global__ void addScannedBlockSums(int *output, const int *blockSums, int n_padded) {
+__global__ void addScannedBlockSums_csr(int *output, const int *blockSums, int n_padded) {
     int blockOffset = 2 * blockIdx.x * blockDim.x;
     int tid = threadIdx.x;
     
@@ -121,7 +121,7 @@ __global__ void addScannedBlockSums(int *output, const int *blockSums, int n_pad
 // Funzione wrapper host per l'esecuzione della scan multi-blocco
 // Prende `d_input` (flags), `d_output` (scan result), `n` (dimensione reale), `lws` (threads per blocco),
 // e un puntatore a float per accumulare il tempo di esecuzione.
-int scan_multiblock(const int *d_input, int *d_output, int n, int lws, float *time_ms_accumulator) {
+int scan_multiblock_csr(const int *d_input, int *d_output, int n, int lws, float *time_ms_accumulator) {
     // Calcola Npad (dimensione padded per la scan)
     int Npad = 1;
     while (Npad < n) Npad <<= 1;
@@ -144,7 +144,7 @@ int scan_multiblock(const int *d_input, int *d_output, int n, int lws, float *ti
 
     // Fase 1: Esegue la scanKernelMultiBlock. Ogni blocco calcola la sua scan interna
     // e la somma totale del blocco viene salvata in `d_blockSums`.
-    scanKernelMultiBlock<<<numBlocks, lws, sharedMemSize>>>(d_input, d_output, d_blockSums, Npad);
+    scanKernelMultiBlock_csr<<<numBlocks, lws, sharedMemSize>>>(d_input, d_output, d_blockSums, Npad);
     check_cuda_error(cudaDeviceSynchronize(), "scanKernelMultiBlock execution");
 
     // Fase 2: Se ci sono più di un blocco, esegue una scan sui `d_blockSums`
@@ -154,11 +154,11 @@ int scan_multiblock(const int *d_input, int *d_output, int n, int lws, float *ti
         // se il numero di blockSums non è troppo grande, altrimenti necessita di un'altra scan multi-blocco.
         // Assumiamo che `numBlocks` sia gestibile da un singolo blocco per semplicità.
         check_cuda_error(cudaMalloc(&d_scannedBlockSums, numBlocks * sizeof(int)), "cudaMalloc d_scannedBlockSums");
-        scanKernel<<<1, (numBlocks + lws - 1) / lws * lws / 2, 2 * ((numBlocks + lws - 1) / lws * lws / 2) * sizeof(int)>>>(d_blockSums, d_scannedBlockSums, numBlocks); // Adatta lws
+        scanKernel_csr<<<1, (numBlocks + lws - 1) / lws * lws / 2, 2 * ((numBlocks + lws - 1) / lws * lws / 2) * sizeof(int)>>>(d_blockSums, d_scannedBlockSums, numBlocks); // Adatta lws
         check_cuda_error(cudaDeviceSynchronize(), "scanKernel blockSums execution");
         
         // Fase 3: Aggiunge le somme cumulative dei blocchi all'output della scan precedente
-        addScannedBlockSums<<<numBlocks, lws>>>(d_output, d_scannedBlockSums, Npad);
+        addScannedBlockSums_csr<<<numBlocks, lws>>>(d_output, d_scannedBlockSums, Npad);
         check_cuda_error(cudaDeviceSynchronize(), "addScannedBlockSums execution");
     }
 

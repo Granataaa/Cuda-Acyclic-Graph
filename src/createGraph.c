@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define NUM_GRAPHS 10     // Numero totale di grafi da generare (modifica a piacere)
-#define N_MIN 20            // Dimensione minima del grafo
-#define N_MAX 200           // Dimensione massima del grafo
+#define NUM_GRAPHS 4    // Numero totale di grafi da generare
+#define N_MIN 20000     // Dimensione minima del grafo
+#define N_MAX 20000     // Dimensione massima del grafo
 
 // Funzione per generare un intero casuale tra min e max (inclusi)
 int rand_int(int min, int max) {
@@ -29,7 +29,7 @@ int main() {
     srand((unsigned int)time(NULL));
     char filename[128];
 
-    for (int graph_idx = 0; graph_idx < NUM_GRAPHS; ++graph_idx) {
+    for (int graph_idx = 3 ; graph_idx < NUM_GRAPHS ; ++graph_idx) {
         int n = rand_int(N_MIN, N_MAX);
         int **mat = (int **)malloc(n * sizeof(int *));
         for (int i = 0; i < n; ++i)

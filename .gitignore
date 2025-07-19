@@ -4,5 +4,4 @@
 *.exe
 *.exp
 *.lib
-
-cose.txt
+*.txt
