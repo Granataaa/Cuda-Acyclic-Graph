@@ -160,30 +160,6 @@ __global__ void calculate_in_degree_csc(const int* d_col_ptr, int* d_in_degree, 
     }
 }
 
-/**
- * @brief Kernel CUDA (versione non ottimizzata) per calcolare l'in-degree di tutti i nodi
- * di un grafo rappresentato in formato CSR (Compressed Sparse Row).
- * Ogni thread itera su tutte le righe per trovare gli archi che puntano a una data colonna.
- * Questa versione è molto inefficiente a causa degli accessi globali non coalesced e delle contese.
- * @param row_ptr Puntatore CUDA all'array row_ptr del grafo CSR.
- * @param col_idx Puntatore CUDA all'array col_idx del grafo CSR.
- * @param in_degree Puntatore CUDA all'array dove memorizzare gli in-degree.
- * @param n Il numero totale di nodi nel grafo.
- */
-__global__ void calculate_in_degree_csr(const int* row_ptr, const int* col_idx, int* in_degree, int n) {
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    if (col >= n) return;
-
-    int count = 0;
-    for (int row = 0; row < n; ++row) {
-        for (int i = row_ptr[row]; i < row_ptr[row + 1]; ++i) {
-            if (col_idx[i] == col) {
-                count++;
-            }
-        }
-    }
-    in_degree[col] = count;
-}
 
 /**
  * @brief Kernel CUDA per calcolare l'in-degree di tutti i nodi di un grafo
@@ -476,15 +452,6 @@ void check_acyclic_csr(const CSRGraph* g, int lws) {
     // float ms_calculate_in_degree = 0.0f;
     // check_cuda_error(cudaEventElapsedTime(&ms_calculate_in_degree, start_calculate_in_degree, stop_calculate_in_degree), "elapsed time calculate_in_degree");
 
-    // cudaEventRecord(start_calculate_in_degree);
-    // calculate_in_degree_csr<<<gridSize, blockSize>>>(d_row_ptr, d_col_idx, d_in_degree, n);
-    // check_cuda_error(cudaDeviceSynchronize(), "calculate_in_degree_csc kernel");
-    // cudaEventRecord(stop_calculate_in_degree);
-    // check_cuda_error(cudaEventSynchronize(stop_calculate_in_degree), "synchronize stop_calculate_in_degree");
-    // float ms_calculate_in_degree = 0.0f;
-    // check_cuda_error(cudaEventElapsedTime(&ms_calculate_in_degree, start_calculate_in_degree, stop_calculate_in_degree), "elapsed time calculate_in_degree");
-
-
     // Dopo aver calcolato l'in-degree iniziale, la rappresentazione CSC non è più necessaria
     cudaFree(d_csc_col_ptr);
     free_csc_graph(csc_h); // Libera la memoria CSC sull'host
@@ -561,7 +528,7 @@ void check_acyclic_csr(const CSRGraph* g, int lws) {
         total_remove_active_nodes += ms_remove_active_nodes;
 
 
-        // // Rimozione nodi attivi
+        // Rimozione nodi attivi
         // cudaEventRecord(start_remove_active_nodes);
         // remove_active_nodes_csr<<<(active_count + blockSize - 1) / blockSize, blockSize>>>(d_row_ptr, d_col_idx, d_in_degree, d_active_nodes, active_count);
         // check_cuda_error(cudaDeviceSynchronize(), "remove_active_nodes_csr_2 kernel");

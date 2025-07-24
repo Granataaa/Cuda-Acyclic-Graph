@@ -338,7 +338,7 @@ void check_acyclic(int* adj, int n, int lws) {
 
         //     // Esegui la logica sulla CPU
         //     // Passa direttamente adj_pad, che è già sulla memoria host
-        //     remove_active_nodes_cpu_dense(adj_pad, h_in_degree_cpu, h_active_nodes_cpu, active_count, n, Npad);
+        //     remove_active_nodes_cpu_dense(h_adj_padded, h_in_degree_cpu, h_active_nodes_cpu, active_count, n, Npad);
 
         //     // Copia i risultati aggiornati di in_degree dalla CPU alla GPU
         //     check_cuda_error(cudaMemcpy(d_in_degree, h_in_degree_cpu, Npad * sizeof(int), cudaMemcpyHostToDevice), "cudaMemcpy h_in_degree_cpu to device after CPU processing");
@@ -365,8 +365,8 @@ void check_acyclic(int* adj, int n, int lws) {
         dim3 grid((active_count + lws2 - 1) / lws2, (n + lws2 - 1) / lws2);
         size_t sharedMemSize = lws2 * sizeof(int);
         cudaEventRecord(start_remove_active_nodes);
-        // remove_active_nodes_2D<<<grid, block>>>(d_adj, d_in_degree, d_active_nodes, active_count, n, Npad);
-        remove_active_nodes_2D_sm<<<grid, block, sharedMemSize>>>(d_adj, d_in_degree, d_active_nodes, active_count, n, Npad);
+        remove_active_nodes_2D<<<grid, block>>>(d_adj, d_in_degree, d_active_nodes, active_count, n, Npad);
+        // remove_active_nodes_2D_sm<<<grid, block, sharedMemSize>>>(d_adj, d_in_degree, d_active_nodes, active_count, n, Npad);
         check_cuda_error(cudaDeviceSynchronize(), "remove_active_nodes kernel");
         cudaEventRecord(stop_remove_active_nodes);
         float ms_remove_active_nodes;

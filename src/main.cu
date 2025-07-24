@@ -4,13 +4,18 @@
 #include "graph_utils.h"
 
 int main(int argc, char* argv[]) {
+    int lws;
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <lws>" << std::endl;
-        return 1;
+        lws = 256; // Imposta un valore predefinito per lws
+        // return 1;
+    } else {
+        // Converti l'argomento lws da stringa a intero
+        lws = std::atoi(argv[1]);
+        if (lws <= 0) {
+            std::cerr << "Errore: <lws> deve essere un numero intero positivo." << std::endl;
+            return 1;
+        }
     }
-    
-    // lws (local work size) è la dimensione del blocco per i kernel 1D
-    int lws = std::atoi(argv[1]);
 
     // Ciclo per testare con diversi file di grafo
     // Assumi che i file siano nominati sample_graph1.txt, sample_graph2.txt, etc.

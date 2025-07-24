@@ -44,34 +44,51 @@ bool check_acyclic_host(const int* adj, int n) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        printf("Usage: %s <graph_file.txt>\n", argv[0]);
-        return 1;
+    for (int i = 0; i < 4; ++i) {
+        printf("\n--- Test Iteration %d ---\n", i + 1);
+
+        int n;
+        char filename[50];
+        snprintf(filename, sizeof(filename), "../data/sample_graph%d.txt", i + 1);
+        FILE* f = fopen(filename, "r"); // Riapri il file ad ogni iterazione
+        if (!f) {
+            perror("File open");
+            return 1; // Termina se il file non può essere aperto
+        }
+
+        fscanf(f, "%d", &n);
+        int* adj = (int*)malloc(n * n * sizeof(int));
+        if (!adj) { // Controllo allocazione memoria
+            perror("Memory allocation failed");
+            fclose(f);
+            return 1;
+        }
+
+        for (int j = 0; j < n * n; ++j) {
+            fscanf(f, "%d", &adj[j]);
+        }
+
+        char buffer[10];
+        // Assicurati che il buffer sia abbastanza grande per il token letto
+        if (fscanf(f, "%9s", buffer) == 1) { // Limita la lettura a 9 caratteri + null terminator
+             printf("The graph definition in file is: %s\n", buffer);
+        } else {
+            printf("Could not read graph definition from file.\n");
+        }
+
+
+        fclose(f); // Chiudi il file alla fine di ogni iterazione
+
+        clock_t start = clock();
+        bool acyclic = check_acyclic_host(adj, n); // Chiama la tua funzione
+        clock_t end = clock();
+        double ms = 1000.0 * (end - start) / CLOCKS_PER_SEC;
+
+        printf("Graph is %s\n", acyclic ? "acyclic" : "cyclic");
+        printf("Host time: %.3f ms\n", ms);
+
+        free(adj); // Libera la memoria allocata per il grafo ad ogni iterazione
     }
-    int n;
-    FILE* f = fopen(argv[1], "r");
-    if (!f) { perror("File open"); return 1; }
-    fscanf(f, "%d", &n);
-    int* adj = (int*)malloc(n * n * sizeof(int));
-    for (int i = 0; i < n * n; ++i)
-        fscanf(f, "%d", &adj[i]);
-    char buffer[10];
-    fscanf(f, "%s", &buffer);
-    printf("the graph is %s\n", buffer);
-    fclose(f);
 
-    clock_t start = clock();
-    bool acyclic = check_acyclic_host(adj, n);
-    clock_t end = clock();
-    double ms = 1000.0 * (end - start) / CLOCKS_PER_SEC;
-    double seconds = ms / 1000.0;
-    double bytes = n * n * sizeof(int); // dati letti dalla matrice
-    double elements = n * n;            // celle della matrice
-    printf("Graph is %s\n", acyclic ? "acyclic" : "cyclic");
-    printf("Host time: %.3f ms\n", ms);
-    // printf("Host GB/s: %.6f\n", bytes / seconds / 1e9);
-    // printf("Host GE/s: %.6f\n", elements / seconds / 1e9);
-
-    free(adj);
     return 0;
 }

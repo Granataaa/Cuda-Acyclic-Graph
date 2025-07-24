@@ -5,17 +5,16 @@
 
 int main(int argc, char* argv[]) {
     // Controlla il numero di argomenti della riga di comando
+    int lws;
     if (argc < 2) {
-        std::cerr << "Uso: " << argv[0] << " <lws>" << std::endl;
-        std::cerr << "  <lws>: Dimensione del blocco (local work size) per i kernel CUDA." << std::endl;
-        return 1; // Termina con un codice di errore
-    }
-
-    // Converti l'argomento lws da stringa a intero
-    int lws = std::atoi(argv[1]);
-    if (lws <= 0) {
-        std::cerr << "Errore: <lws> deve essere un numero intero positivo." << std::endl;
-        return 1;
+        lws = 256; // Imposta un valore predefinito per lws
+        // return 1; // Termina con un codice di errore
+    } else {
+        lws = std::atoi(argv[1]);
+        if (lws <= 0) {
+            std::cerr << "Errore: <lws> deve essere un numero intero positivo." << std::endl;
+            return 1;
+        }
     }
 
     // Loop per testare diversi grafi di esempio
